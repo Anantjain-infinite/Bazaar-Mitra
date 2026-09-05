@@ -11,6 +11,8 @@ from payment failures, and hand off to specialist agents — while merchants get
 growth agent that finds revenue opportunities in their own sales data, gated behind
 their explicit approval before anything reaches a customer.
 
+**Live demo:** [bazaar-mitra-three.vercel.app](https://bazaar-mitra-three.vercel.app/)
+
 **Test-mode only.** Every payment flow here runs against Razorpay's Test Mode. Nothing
 in this repository is production-ready as-is — see [Limitations](#limitations) and
 [Toward production](#toward-production) at the end.
@@ -496,6 +498,9 @@ let you trigger both successful and failed payments on demand.
   details (by design) and currently tells the caller to complete payment via the
   web app using their order reference, rather than sending an SMS/WhatsApp link —
   there's no messaging integration to send one.
+- **Voice agent availability depends on Gemini quota.** On the Gemini free tier, the
+  voice agent may occasionally be unavailable or stop responding after the quota is
+  exceeded. Retry later or use the AI Buyer web experience instead.
 - **This was built in a sandboxed environment with no network access to
   `api.razorpay.com`, LiveKit, Deepgram, or Murf.** Every code path that needs those
   services is written against their official, current documentation and covered by
