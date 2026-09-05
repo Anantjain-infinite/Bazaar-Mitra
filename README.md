@@ -1,17 +1,15 @@
 # Bazaar Mitra — Agentic Commerce Platform for Local Kirana Shops
 
-Bazaar Mitra started as a voice shopping assistant for India's local kirana stores,
-built over the [10 Days of Voice Agents — VoiceForBharat Edition](https://github.com/murf-ai/voice-for-bharat-challenge-2026)
-challenge on the [Murf LiveKit Starter](https://github.com/murf-ai/murf-livekit-starter).
-It has since grown into a full **agentic commerce platform**: AI buyers can discover
+Bazaar Mitra is an **agentic commerce platform for India's local kirana stores**,
+built for the [Razorpay AI Buildathon](https://razorpay.com/). It includes a voice
+shopping assistant that helps customers discover products, compare merchants, and
+place orders through natural conversation.
+
+The platform has grown into a complete commerce system: AI buyers can discover
 merchants, compare real prices, place and pay for real orders through Razorpay, recover
 from payment failures, and hand off to specialist agents — while merchants get an AI
 growth agent that finds revenue opportunities in their own sales data, gated behind
 their explicit approval before anything reaches a customer.
-
-For the original voice-agent build story — what broke, what I learned along the way —
-see the [companion blog post](https://dev.to/aj_infinite_2208/i-built-a-voice-shopping-assistant-for-local-kirana-stores-in-10-days-heres-everything-that-broke-k50).
-This README covers the platform as it stands today.
 
 **Test-mode only.** Every payment flow here runs against Razorpay's Test Mode. Nothing
 in this repository is production-ready as-is — see [Limitations](#limitations) and
@@ -133,6 +131,58 @@ knowing: `buyer_agent.select_best_available`'s product-selection logic is a
 **deterministic rule** (cheapest in-stock match), not an LLM call — the same
 "keep business logic out of prompts" principle applied to the one piece of buyer
 "intelligence" that actually touches money.
+
+## The voice agent flow
+
+The voice agent gives customers a natural-language entry point into the same
+commerce engine. It keeps conversational context while every cart, order, policy,
+payment, and audit operation is handled by the shared backend services.
+
+```text
+Customer speaks
+  |
+  v
+Voice agent understands the request and searches the live catalog
+  |
+  v
+Compares merchants, prices, stock, and relevant recommendations
+  |
+  v
+Creates or updates the cart and reads back the exact total
+  |
+  v
+Creates an order and runs the deterministic policy checks
+  |
+  v
+Requests explicit confirmation before checkout or payment
+  |
+  v
+Creates a Razorpay payment attempt and explains how to complete it
+  |
+  v
+Reports payment status from verified backend state and can hand off to a specialist
+```
+
+### What the voice agent can do
+
+- Understand shopping requests in natural language, including common Hinglish
+  phrasing.
+- Search and compare products across merchants using real prices and stock levels.
+- Explain why an unavailable or more expensive product was not selected.
+- Create a cart, add or remove products, update quantities, and show the current cart.
+- Suggest relevant cross-sell or upsell products without adding anything implicitly.
+- Create an order, show the exact total, and require explicit confirmation before
+  proceeding.
+- Enforce transaction and daily limits through the backend policy engine before payment.
+- Start Razorpay payment attempts and explain failures or retry options.
+- Hand off payment questions to the Payments Specialist, return requests to the Returns
+  & Refunds Specialist, and order issues to the Order Support Specialist.
+- Preserve the customer's commerce session and context across specialist handoffs.
+
+Voice payment is deliberately out-of-band: the agent never collects card numbers, UPI
+credentials, or OTPs over the call. It creates the payment attempt server-side and tells
+the customer to complete checkout through the web app using the order reference. Payment
+success is only reported after server-side verification and webhook reconciliation.
 
 ## The merchant growth flow
 
