@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-starter-python"
+version = "1.0.0"
+description = "Voice AI agent starter powered by Murf Falcon TTS and LiveKit Agents"
+requires-python = ">=3.10, <3.15"
+
+dependencies = [
+    "alembic>=1.19.1",
+    "asyncpg>=0.31.0",
+    "fastapi>=0.141.1",
+    "livekit-agents[deepgram,google,silero,turn-detector]~=1.4",
+    "livekit-murf>=0.1.1",
+    "livekit-plugins-noise-cancellation~=0.2",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.15.0",
+    "python-dotenv",
+    "razorpay>=2.0.1",
+    "sqlalchemy>=2.0",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "A", "C4", "UP", "SIM", "RUF"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI's dependency-injection pattern requires calling Depends()/Query()/
+# Body() etc. in argument defaults — that's not the mutable-default-argument
+# bug B008 is meant to catch, it's how FastAPI discovers what to inject.
+"app/api/routes/*.py" = ["B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

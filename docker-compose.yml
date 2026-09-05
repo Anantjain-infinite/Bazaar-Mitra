@@ -1,0 +1,89 @@
+# Local development stack for Bazaar Mitra.
+#
+#   docker compose up --build
+#       -> postgres + commerce API (FastAPI) + frontend (Next.js)
+#
+#   docker compose --profile voice up --build
+#       -> the above, PLUS the LiveKit voice worker (needs LiveKit/
+#          Deepgram/Murf/Google credentials in backend/.env.local — it's
+#          opt-in via a profile because most iteration on the commerce
+#          layer doesn't need a live voice connection running).
+#
+# For fast backend iteration, many people will find it quicker to run
+# `uv run uvicorn app.main:app --reload` directly on the host (against
+# this same Postgres, exposed on localhost:5432) rather than rebuilding
+# the container on every change — this compose file is optimized for a
+# clean, reproducible full-stack run, not hot-reload-in-container.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bazaar_mitra
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env.local
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/bazaar_mitra
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "uv run alembic upgrade head &&
+             uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    env_file:
+      - path: ./frontend/.env.local
+        required: false
+    environment:
+      NEXT_PUBLIC_COMMERCE_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+
+  voice-agent:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    profiles: ["voice"]
+    env_file:
+      - path: ./backend/.env.local
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/bazaar_mitra
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+volumes:
+  pgdata:
