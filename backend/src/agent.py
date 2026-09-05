@@ -515,7 +515,7 @@ async def _ensure_commerce_session(context: "RunContext[CallState]") -> str:
     async with commerce_db() as cdb:
         buyer = await commerce_buyer_service.get_or_create_buyer_by_phone(
             cdb,
-            context.userdata.caller_id or f"voice-{uuid.uuid4().hex[:10]}",
+            f"voice-{uuid.uuid4().hex[:10]}",
             preferred_language="en",
         )
         commerce_session = await commerce_session_service.create_session(
